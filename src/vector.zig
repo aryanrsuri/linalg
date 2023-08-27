@@ -1,16 +1,23 @@
+//!                     BY: Aryan Suri
+//!                     DATE: 2023-08-27
+//!                     LICENCE: MIT
+//!                     Vector Library File
+//!
+
 const std = @import("std");
 
 pub fn Vector(comptime T: type, comptime SIZE: usize) type {
+    const v3 = struct { x: T, y: T, z: T };
     return struct {
         const Self = @This();
         allocator: std.mem.Allocator,
-        items: [SIZE]T,
+        items: []T,
 
         pub fn init(allocator: std.mem.Allocator) Self {
             var items = allocator.alloc(T, SIZE) catch @panic("Vector Allocation failed");
+            std.debug.print("{any}\n", .{items.len});
             return .{ .allocator = allocator, .items = items };
         }
-
 
         pub fn deinit(self: *Self) void {
             self.allocator.free(self.items);
@@ -39,13 +46,12 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
             _ = self;
         }
 
-        pub fn vectorize3(self: *Self) ![SIZE]T {
-            if (SIZE != 3) return error{Error}
-            var i: usize = 0;
-            return struct {
-                x: T = self.items[0],
-                y: T = self.items[1],
-                z: T = self.items[2],
+        pub fn vectorize(self: *Self) !v3 {
+            if (SIZE != 3) return error{Error};
+            return .{
+                .x = self.items[0],
+                .y = self.items[1],
+                .z = self.items[2],
             };
         }
 
@@ -86,9 +92,9 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
 
         pub fn normalise(self: *Self) void {
             var i: usize = 0;
-            const _magnitude = self.magnitude();
+            const _magnitude_ = self.magnitude();
             while (i < self.items.len) : (i += 1) {
-                self.items[i] /= _magnitude;
+                self.items[i] /= _magnitude_;
             }
         }
 
@@ -109,14 +115,11 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
             var i: usize = 0;
             var result: T = 0;
             while (i < self.items.len) : (i += 1) {
-                self.items[i] *= u.items[i];
-                result += self.items[i] * self.items[i];
+                result += (self.items[i] * self.items[i]);
             }
 
             return result;
         }
-
-        
     };
 }
 
@@ -126,14 +129,17 @@ test "Vector" {
     var u = Vector(f64, 3).init(t);
     var k = Vector(u64, 3).init(t);
     var l = Vector(u64, 3).init(t);
+    var p = Vector(u64, 30).init(t);
     k.one();
     l.one();
+    p.one();
 
     defer {
         v.deinit();
         u.deinit();
         k.deinit();
         l.deinit();
+        p.deinit();
     }
 
     v.mask(2.0);
@@ -156,5 +162,7 @@ test "Vector" {
     std.debug.print("\n {any}\t{any} \n", .{ v.items, u.items });
     u.set(3, [3]f64{ 3, 2, 1 });
     std.debug.print("\n {any}\t{any} \n", .{ v.items, u.items });
-    std.debug.print("\n {any}\t{any} \n", .{ v.items, k.eql(&l) });
+    std.debug.print("\n {any}\t{any} \n", .{ v.items, p.dot(&p) });
+    const V = try v.vectorize();
+    std.debug.print("\n {any}\t{any} \n", .{ &V.x, k.eql(&l) });
 }

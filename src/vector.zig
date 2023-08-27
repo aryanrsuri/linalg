@@ -4,12 +4,13 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
     return struct {
         const Self = @This();
         allocator: std.mem.Allocator,
-        items: []T,
+        items: [SIZE]T,
 
         pub fn init(allocator: std.mem.Allocator) Self {
             var items = allocator.alloc(T, SIZE) catch @panic("Vector Allocation failed");
             return .{ .allocator = allocator, .items = items };
         }
+
 
         pub fn deinit(self: *Self) void {
             self.allocator.free(self.items);
@@ -36,6 +37,16 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
             const d_meta = @typeInfo(d_type);
             if (d_meta != .Float or d_meta != .Int) return error{Error};
             _ = self;
+        }
+
+        pub fn vectorize3(self: *Self) ![SIZE]T {
+            if (SIZE != 3) return error{Error}
+            var i: usize = 0;
+            return struct {
+                x: T = self.items[0],
+                y: T = self.items[1],
+                z: T = self.items[2],
+            };
         }
 
         pub fn set(self: *Self, comptime length: usize, items: [length]T) void {
@@ -104,6 +115,8 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
 
             return result;
         }
+
+        
     };
 }
 

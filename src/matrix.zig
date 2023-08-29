@@ -1,4 +1,5 @@
 const std = @import("std");
+
 pub fn Matrix(comptime T: type) type {
     return struct {
         const Row = struct { cols: usize, elements: *T };
@@ -23,11 +24,11 @@ pub fn Matrix(comptime T: type) type {
             self.* = undefined;
         }
 
-        fn set(self: *Self, i: usize, j: usize, scalar: T) void {
+        pub fn set(self: *Self, i: usize, j: usize, scalar: T) void {
             self.elements[(i) * (self.cols) + (j)] = scalar;
         }
 
-        fn get(self: *Self, i: usize, j: usize) T {
+        pub fn get(self: *Self, i: usize, j: usize) T {
             return self.elements[(i) * (self.cols) + (j)];
         }
 
@@ -90,16 +91,31 @@ pub fn Matrix(comptime T: type) type {
     };
 }
 
+pub fn Mat2(comptime T: type, alloc: std.mem.Allocator) Matrix(T) {
+    return Matrix(T).alloc(alloc, 2, 2);
+}
+pub fn Mat3(comptime T: type, alloc: std.mem.Allocator) Matrix(T) {
+    return Matrix(T).alloc(alloc, 3, 3);
+}
+pub fn Mat4(comptime T: type, alloc: std.mem.Allocator) Matrix(T) {
+    return Matrix(T).alloc(alloc, 3, 3);
+}
+
 test "Matrix" {
     const T = std.testing.allocator;
     var R = Matrix(f64).alloc(T, 2, 2);
     var A = Matrix(f64).alloc(T, 2, 2);
     var M = Matrix(f64).alloc(T, 2, 2);
-
+    var TH = Mat3(f64, T);
+    TH.ones();
+    std.debug.print("R\n {any}\n", .{TH.elements});
+    TH.set(1, 1, 100.0);
+    std.debug.print("R\n {any}\n", .{TH.elements});
     defer {
         R.dealloc();
         A.dealloc();
         M.dealloc();
+        TH.dealloc();
     }
 
     M.mask(3.0);

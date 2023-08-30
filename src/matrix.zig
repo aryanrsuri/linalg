@@ -47,8 +47,8 @@ pub fn Matrix(comptime T: type) type {
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
-                    const temp = self.get(i, j);
-                    self.set(i, j, scalar * temp);
+                    const v = self.get(i, j);
+                    self.set(i, j, scalar * v);
                 }
             }
         }
@@ -72,9 +72,32 @@ pub fn Matrix(comptime T: type) type {
         pub fn trace() T {}
         pub fn determinant() T {}
         pub fn inverse() T {}
-        pub fn sum() void {}
-        pub fn copy() void {}
+        pub fn sum(self: *Self, A: *Matrix(T), M: *Matrix(T)) void {
+            var i: usize = 0;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    var k: usize = 0;
+                    var v: T = 0;
+                    M.set(i, j, 0);
+                    while (k < self.cols) : (k += 1) {
+                        v += self.get(i, k) + A.get(i, k);
+                        M.set(i, j, v);
+                    }
+                }
+            }
+        }
 
+        pub fn copy(self: *Self, A: *Matrix(T)) void {
+            var i: usize = 0;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    const v = self.get(i, j);
+                    A.set(i, j, v);
+                }
+            }
+        }
         // Alias functions //
 
         pub fn zeros(self: *Self) void {

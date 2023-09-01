@@ -1,6 +1,5 @@
-const std = @import("std");
-const rgen = std.rand.DefaultPrng;
-
+pub const std = @import("std");
+pub const rgen = std.rand.DefaultPrng;
 pub fn Matrix(comptime T: type) type {
     return struct {
         const Row = struct { cols: usize, elements: *T };

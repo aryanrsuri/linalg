@@ -130,14 +130,14 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
-        pub fn copy(self: *Self, A: *Matrix(T)) void {
+        pub fn copy(self: *Self, M: *Matrix(T)) void {
             if (self.rows != A.rows) return error.MatrixSpaceError;
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
                     const v = self.get(i, j);
-                    A.set(i, j, v);
+                    M.set(i, j, v);
                 }
             }
         }

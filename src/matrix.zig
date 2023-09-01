@@ -1,5 +1,6 @@
 pub const std = @import("std");
 pub const rgen = std.rand.DefaultPrng;
+pub var rand = rgen.init(0);
 pub fn Matrix(comptime T: type) type {
     return struct {
         const Row = struct { cols: usize, elements: *T };
@@ -10,7 +11,7 @@ pub fn Matrix(comptime T: type) type {
         region: std.mem.Allocator,
 
         pub fn alloc(allocator: std.mem.Allocator, comptime rows: usize, comptime cols: usize) Self {
-            const elements = allocator.alloc(T, rows * cols) catch @panic("Allocaiton failed");
+            const elements = allocator.alloc(T, rows * cols) catch @panic("Allocation failed");
             return .{
                 .rows = rows,
                 .cols = cols,
@@ -42,16 +43,15 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
-        pub fn rmask(self: *Self) void {
-            var rand = rgen.init(0);
+        pub fn rmask(self: *Self, radix: T) void {
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
                     if (@typeInfo(T) == .Float) {
-                        self.set(i, j, rand.random().float(T));
+                        self.set(i, j, rand.random().float(T) * radix);
                     } else {
-                        self.set(i, j, rand.random().int(T));
+                        self.set(i, j, rand.random().int(T) * radix);
                     }
                 }
             }
@@ -67,7 +67,9 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
-        pub fn dot(self: *Self, A: *Matrix(T), M: *Matrix(T)) void {
+        pub fn dot(self: *Self, A: *Matrix(T), M: *Matrix(T)) !void {
+            if (self.rows != A.rows) return error.MatrixSpaceError;
+            if (A.rows != M.rows) return error.MatrixSpaceError;
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
@@ -83,11 +85,25 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
-        pub fn trace() T {}
+        pub fn trace(self: *Self) !T {
+            if (self.rows != self.cols) return error.NotSquare;
+            var i: usize = 0;
+            var tr: T = undefined;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    if (i == j) tr += self.get(i, j);
+                }
+            }
+
+            return tr;
+        }
         pub fn determinant() T {}
+        pub fn magnitude() T {}
         pub fn inverse() T {}
 
-        pub fn transpose(self: *Self, M: *Matrix(T)) void {
+        pub fn transpose(self: *Self, M: *Matrix(T)) !void {
+            if (self.rows != M.cols) return error.MatrixSpaceError;
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
@@ -115,12 +131,36 @@ pub fn Matrix(comptime T: type) type {
         }
 
         pub fn copy(self: *Self, A: *Matrix(T)) void {
+            if (self.rows != A.rows) return error.MatrixSpaceError;
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
                     const v = self.get(i, j);
                     A.set(i, j, v);
+                }
+            }
+        }
+
+        // Alias functions //
+
+        pub fn zeros(self: *Self) void {
+            self.mask(0);
+        }
+
+        pub fn ones(self: *Self) void {
+            self.mask(1);
+        }
+
+        pub fn identity(self: *Self) void {
+            if (self.rows != self.cols) @panic("Matrix not square");
+            var i: usize = 0;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    if (i == j) {
+                        self.set(i, j, 1);
+                    } else self.set(i, j, 0);
                 }
             }
         }
@@ -137,19 +177,6 @@ pub fn Matrix(comptime T: type) type {
                 std.debug.print("\n", .{});
             }
             std.debug.print(" ] \n ", .{});
-        }
-        // Alias functions //
-
-        pub fn zeros(self: *Self) void {
-            self.mask(0);
-        }
-
-        pub fn ones(self: *Self) void {
-            self.mask(1);
-        }
-
-        pub fn identity(self: *Self) void {
-            if (self.rows != self.cols) @panic("Matrix not square");
         }
     };
 }
@@ -173,12 +200,12 @@ test "Matrix" {
     var M = Matrix(f64).alloc(T, 2, 2);
     var E = Matrix(f64).alloc(T, 2, 3);
     var TrE = Matrix(f64).alloc(T, 3, 2);
-    E.rmask();
-    I.rmask();
+    E.rmask(1);
+    I.rmask(1);
     E.print("E");
     I.print("I");
-    E.transpose(&TrE);
-    I.transpose(&IrE);
+    try E.transpose(&TrE);
+    try I.transpose(&IrE);
 
     TrE.print("E_tr");
     IrE.print("I_tr");
@@ -186,6 +213,8 @@ test "Matrix" {
     TH.ones();
     TH.print("m3");
     TH.set(1, 1, 100.0);
+    TH.print("m3");
+    TH.rmask(10);
     TH.print("m3");
     defer {
         R.dealloc();
@@ -199,11 +228,14 @@ test "Matrix" {
     }
 
     M.mask(3.0);
+    std.debug.print("\n\t Trace of Mat3rand {any}\n", .{TH.trace()});
     R.mask(5.0);
-    M.dot(&R, &A);
+    try M.dot(&R, &A);
     R.scale(2.0);
 
     R.print("R");
     A.print("A");
     M.print("M");
+    M.identity();
+    M.print("I");
 }

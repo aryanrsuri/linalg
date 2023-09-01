@@ -67,6 +67,18 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
+        /// IN PROGRESS DO NOT USE
+        pub fn submatrix(self: *Self, i: usize, j: usize, M: *Matrix(T)) !void {
+            var iter: usize = i;
+            var jter: usize = j;
+            while (iter < j) : (iter += 1) {
+                std.debug.print("{} {}\n", .{ iter, jter });
+                const index: usize = @as(usize, self.elements[iter]);
+                M.elements[index];
+                jter += 1;
+            }
+        }
+
         pub fn dot(self: *Self, A: *Matrix(T), M: *Matrix(T)) !void {
             if (self.rows != A.rows) return error.MatrixSpaceError;
             if (A.rows != M.rows) return error.MatrixSpaceError;
@@ -200,6 +212,7 @@ test "Matrix" {
     var M = Matrix(f64).alloc(T, 2, 2);
     var E = Matrix(f64).alloc(T, 2, 3);
     var TrE = Matrix(f64).alloc(T, 3, 2);
+
     E.rmask(1);
     I.rmask(1);
     E.print("E");
@@ -209,6 +222,7 @@ test "Matrix" {
 
     TrE.print("E_tr");
     IrE.print("I_tr");
+    var two = Mat2(f64, T);
     var TH = Mat3(f64, T);
     TH.ones();
     TH.print("m3");
@@ -225,6 +239,7 @@ test "Matrix" {
         TrE.dealloc();
         IrE.dealloc();
         TH.dealloc();
+        two.dealloc();
     }
 
     M.mask(3.0);
@@ -234,6 +249,8 @@ test "Matrix" {
     R.scale(2.0);
 
     R.print("R");
+    // try R.submatrix(0, 3, &two);
+    // two.print("2x2 subof R");
     A.print("A");
     M.print("M");
     M.identity();

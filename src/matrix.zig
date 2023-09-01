@@ -1,4 +1,5 @@
 const std = @import("std");
+const rgen = std.rand.DefaultPrng;
 
 pub fn Matrix(comptime T: type) type {
     return struct {
@@ -42,6 +43,20 @@ pub fn Matrix(comptime T: type) type {
             }
         }
 
+        pub fn rmask(self: *Self) void {
+            var rand = rgen.init(0);
+            var i: usize = 0;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    // if (tinfo == std.builtin.Type.Int) {
+                    // self.set(i, j, rand.random().int(T));
+                    // } else {
+                    self.set(i, j, rand.random().float(T));
+                    // }
+                }
+            }
+        }
         pub fn scale(self: *Self, scalar: T) void {
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
@@ -72,6 +87,18 @@ pub fn Matrix(comptime T: type) type {
         pub fn trace() T {}
         pub fn determinant() T {}
         pub fn inverse() T {}
+
+        pub fn transpose(self: *Self, M: *Matrix(T)) void {
+            var i: usize = 0;
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                while (j < self.cols) : (j += 1) {
+                    var v: T = self.get(i, j);
+                    M.set(i, j, v);
+                }
+            }
+        }
+
         pub fn sum(self: *Self, A: *Matrix(T), M: *Matrix(T)) void {
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
@@ -97,6 +124,20 @@ pub fn Matrix(comptime T: type) type {
                     A.set(i, j, v);
                 }
             }
+        }
+
+        pub fn print(self: *Self, title: []const u8) void {
+            var i: usize = 0;
+            std.debug.print("\n{s} = [\n", .{title});
+            while (i < self.rows) : (i += 1) {
+                var j: usize = 0;
+                std.debug.print("\t", .{});
+                while (j < self.cols) : (j += 1) {
+                    std.debug.print("{any} ", .{self.get(i, j)});
+                }
+                std.debug.print("\n", .{});
+            }
+            std.debug.print(" ] \n ", .{});
         }
         // Alias functions //
 
@@ -129,6 +170,13 @@ test "Matrix" {
     var R = Matrix(f64).alloc(T, 2, 2);
     var A = Matrix(f64).alloc(T, 2, 2);
     var M = Matrix(f64).alloc(T, 2, 2);
+    var E = Matrix(f64).alloc(T, 2, 3);
+    var TrE = Matrix(f64).alloc(T, 3, 2);
+    E.rmask();
+    E.print("E");
+    E.transpose(&TrE);
+
+    TrE.print("E");
     var TH = Mat3(f64, T);
     TH.ones();
     std.debug.print("R\n {any}\n", .{TH.elements});
@@ -138,6 +186,8 @@ test "Matrix" {
         R.dealloc();
         A.dealloc();
         M.dealloc();
+        E.dealloc();
+        TrE.dealloc();
         TH.dealloc();
     }
 
@@ -146,7 +196,8 @@ test "Matrix" {
     M.dot(&R, &A);
     R.scale(2.0);
 
-    std.debug.print("R\n {any}\n", .{R.elements});
-    std.debug.print("A\n {any}\n", .{A.elements});
-    std.debug.print("M\n {any}\n", .{M.elements});
+    R.print("R");
+    A.print("A");
+    M.print("M");
+    M.print("M_t");
 }

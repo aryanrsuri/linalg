@@ -49,11 +49,11 @@ pub fn Matrix(comptime T: type) type {
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
-                    // if (tinfo == std.builtin.Type.Int) {
-                    // self.set(i, j, rand.random().int(T));
-                    // } else {
-                    self.set(i, j, rand.random().float(T));
-                    // }
+                    if (@typeInfo(T) == .Float) {
+                        self.set(i, j, rand.random().float(T));
+                    } else {
+                        self.set(i, j, rand.random().int(T));
+                    }
                 }
             }
         }
@@ -94,7 +94,7 @@ pub fn Matrix(comptime T: type) type {
                 var j: usize = 0;
                 while (j < self.cols) : (j += 1) {
                     var v: T = self.get(i, j);
-                    M.set(i, j, v);
+                    M.set(j, i, v);
                 }
             }
         }
@@ -168,26 +168,34 @@ pub fn Mat4(comptime T: type, alloc: std.mem.Allocator) Matrix(T) {
 test "Matrix" {
     const T = std.testing.allocator;
     var R = Matrix(f64).alloc(T, 2, 2);
+    var I = Matrix(i64).alloc(T, 3, 2);
+    var IrE = Matrix(i64).alloc(T, 2, 3);
     var A = Matrix(f64).alloc(T, 2, 2);
     var M = Matrix(f64).alloc(T, 2, 2);
     var E = Matrix(f64).alloc(T, 2, 3);
     var TrE = Matrix(f64).alloc(T, 3, 2);
     E.rmask();
+    I.rmask();
     E.print("E");
+    I.print("I");
     E.transpose(&TrE);
+    I.transpose(&IrE);
 
-    TrE.print("E");
+    TrE.print("E_tr");
+    IrE.print("I_tr");
     var TH = Mat3(f64, T);
     TH.ones();
-    std.debug.print("R\n {any}\n", .{TH.elements});
+    TH.print("m3");
     TH.set(1, 1, 100.0);
-    std.debug.print("R\n {any}\n", .{TH.elements});
+    TH.print("m3");
     defer {
         R.dealloc();
         A.dealloc();
+        I.dealloc();
         M.dealloc();
         E.dealloc();
         TrE.dealloc();
+        IrE.dealloc();
         TH.dealloc();
     }
 
@@ -199,5 +207,4 @@ test "Matrix" {
     R.print("R");
     A.print("A");
     M.print("M");
-    M.print("M_t");
 }

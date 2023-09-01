@@ -62,6 +62,10 @@ pub fn Vector(comptime T: type, comptime SIZE: usize) type {
             }
         }
 
+        pub fn get(self: *Self, i: usize) T {
+            return self.items[i];
+        }
+
         pub fn mask(self: *Self, value: T) void {
             var i: usize = 0;
             while (i < self.items.len) : (i += 1) {

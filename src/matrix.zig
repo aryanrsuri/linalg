@@ -143,7 +143,7 @@ pub fn Matrix(comptime T: type) type {
         }
 
         pub fn copy(self: *Self, M: *Matrix(T)) void {
-            if (self.rows != A.rows) return error.MatrixSpaceError;
+            if (self.rows != M.rows) return error.MatrixSpaceError;
             var i: usize = 0;
             while (i < self.rows) : (i += 1) {
                 var j: usize = 0;
